@@ -148,7 +148,7 @@ jobs:
         # Demo-friendly: deploy for ci-dev, ci-test, and cd-prod
         run: |
           cd "$BUNDLE_PATH"
-          databricks bundle deploy --target "$TARGET" --no-prompt
+          databricks bundle deploy --target "$TARGET" --auto-approve
 
       - name: Asset validation (metadata-driven)
         if: ${{ inputs.mode == 'ci-test' && inputs.run_asset_validation }}
