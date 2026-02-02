@@ -314,7 +314,7 @@ jobs:
               exit 2
             fi
             cd "$BUNDLE_PATH"
-            databricks bundle run "$SMOKE_JOB_KEY" --target "$TARGET"
+            databricks bundle run "$SMOKE_JOB_KEY" --target "$TARGET" --var="validation_cluster_id=$DATABRICKS_VALIDATION_CLUSTER_ID"
             exit 0
           fi
 
