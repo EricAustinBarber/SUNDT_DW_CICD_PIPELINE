@@ -184,7 +184,7 @@ jobs:
       - name: Bundle validate
         run: |
           cd "$BUNDLE_PATH"
-          databricks bundle validate --target "$TARGET"
+          databricks bundle validate --target "$TARGET" --var="validation_cluster_id=$DATABRICKS_VALIDATION_CLUSTER_ID"
 
       # Build/package step (optional)
       - name: Package bundle content (artifact)
