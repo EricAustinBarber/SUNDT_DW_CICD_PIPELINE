@@ -105,9 +105,9 @@ on:
       DATABRICKS_TOKEN:
         required: true
       DATABRICKS_VALIDATION_CLUSTER_ID:
-        required: false
+        required: true
       DATABRICKS_SQL_WAREHOUSE_ID:
-        required: false
+        required: true
 
 jobs:
   databricks:
