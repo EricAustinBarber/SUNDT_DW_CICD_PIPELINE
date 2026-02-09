@@ -164,6 +164,7 @@ jobs:
       - name: Install tooling
         run: |
           python -m pip install --upgrade pip
+          # Do NOT install legacy databricks-cli (it overrides the `databricks` command)
           pip install databricks-sdk
           sudo apt-get update
           sudo apt-get install -y jq zip
