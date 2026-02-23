@@ -1,0 +1,41 @@
+name: ci-platform
+
+on:
+  pull_request:
+    branches: [dev, test, prod, main]
+  push:
+    branches: [dev, test, prod, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workflow_lint:
+    name: workflow-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install actionlint
+        run: |
+          curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- latest
+          echo "$PWD" >> $GITHUB_PATH
+      - name: Run actionlint
+        run: ./actionlint -color
+
+  docs_guard:
+    name: docs-guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify required docs exist
+        run: |
+          test -f README.md
+          test -f docs/security-and-secrets.md
+          test -f docs/branching-and-promotion.md

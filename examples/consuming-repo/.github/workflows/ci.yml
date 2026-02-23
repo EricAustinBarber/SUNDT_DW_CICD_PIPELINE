@@ -7,6 +7,13 @@ on:
     branches: [dev, test, prod]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: databricks-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ----------------------------
   # Dev: fast checks + optional deploy
@@ -21,6 +28,7 @@ jobs:
       target: dev
       environment_name: DataBricks-Dev
       run_asset_validation: false
+    secrets: inherit
 
   # ----------------------------
   # Test: full integration + asset validation (gate for prod)
@@ -36,6 +44,7 @@ jobs:
       environment_name: DataBricks-Test
       run_asset_validation: true
       asset_validation_notebook_path: /Repos/ci/asset_validation_driver
+    secrets: inherit
 
   # ----------------------------
   # Prod: deployment (requires environment approval + branch protection)
@@ -54,3 +63,4 @@ jobs:
       # In v1 we keep promote_artifact_only=false. Once artifact promotion is implemented
       # across workflows/releases, set promote_artifact_only=true and fetch the artifact by version.
       promote_artifact_only: false
+    secrets: inherit

@@ -9,8 +9,10 @@ on:
 
 permissions:
   contents: read
-  # Removed for demo purposes
-  # id-token: write
+
+concurrency:
+  group: databricks-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci_dev:

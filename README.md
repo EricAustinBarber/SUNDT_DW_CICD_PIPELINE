@@ -1,43 +1,43 @@
 # SUNDT_DW_CICD_PIPELINE
 
-Centralized CI/CD platform for Sundt Data Warehouse repositories.
+Centralized CI/CD platform repository for Sundt Data Warehouse deployments.
 
-This repository provides:
-- Standard GitHub Actions workflows for CI and CD
-- Reusable composite actions for Databricks deployments
-- Metadata-driven automated testing for Databricks Asset Bundles
-- Branching, promotion, and security standards for data pipelines
+## Purpose
+
+This repository provides reusable GitHub Actions workflows, deployment controls, and operational runbooks for Databricks Asset Bundle delivery.
 
 ## Goals
-- Enable safe, repeatable, and auditable deployments to Databricks
-- Enforce automated testing before promotion to production
-- Reduce manual effort and production data incidents
-- Standardize CI/CD practices across all data warehouse repositories
+- Enable safe, repeatable, and auditable Databricks deployments
+- Enforce automated validation before production promotion
+- Reduce manual deployment effort and production incidents
+- Standardize CI/CD practices across data warehouse repositories
 
 ## What lives here
-- GitHub Actions workflows (`.github/workflows`)
-- Reusable composite actions (`/actions`)
-- Databricks asset testing framework (`/databricks/asset-testing`)
-- Documentation and runbooks (`/docs`)
+- Reusable GitHub Actions workflows (`.github/workflows`)
+- Example consuming workflow templates (`examples/consuming-repo`)
+- Security and operations documentation (`docs/`)
 
-## What does NOT live here
-- Business logic or transformation code
-- Databricks notebooks
-- Environment-specific configuration values
+## What does not live here
+- Business transformation logic
+- Domain-specific Databricks notebooks from product teams
+- Environment-specific secret values
 
-## Branching & Promotion Model (High Level)
-- Feature branches → PR → `dev`
-- `test` branch runs full integration + data asset validation
-- PRs to `prod` require `ci-test` to pass
-- Production deployments use promoted artifacts only
+## Branching and promotion model
+- Feature branches -> PR -> `dev`
+- `test` branch runs integration checks and validation gates
+- `prod` deploys only after controlled promotion and approvals
 
 See `docs/branching-and-promotion.md` for details.
+See `docs/branch-protection-checklist.md` for branch and approval controls.
+See `docs/workflow-validation-runbook.md` for dev/test validation runs.
 
-## Adoption
-Other repositories consume this repo by:
-- Referencing reusable workflows via `workflow_call`
-- Using composite actions for Databricks deployment and testing
-- Following documented branching and promotion standards
+## Security model
+- No plaintext secrets in source control
+- GitHub Environment scoping for deployment credentials
+- Runtime data secrets resolved from Azure Key Vault where possible
 
-## Status
-🚧 Initial bootstrap – workflows and asset testing framework under active development.
+See `docs/security-and-secrets.md` for the detailed model.
+
+## Current status
+
+Reusable Databricks workflow foundation is in place and ready for consuming repositories.
