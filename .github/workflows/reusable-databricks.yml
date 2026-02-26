@@ -271,7 +271,7 @@ jobs:
 
       - name: Upload artifact
         if: ${{ inputs.promote_artifact_only == false }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact_name }}
           path: dist/${{ inputs.artifact_name }}.zip
