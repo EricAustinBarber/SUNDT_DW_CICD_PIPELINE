@@ -223,14 +223,15 @@ Asset validation failures are usually one of:
 
 ### Symptoms
 - Databricks job cancelled
-- Cluster failed to start
+- Serverless workflow task failed to start
 - Intermittent network timeouts
 - CI runner transient errors
 
 ### Actions
 1. Re-run failed workflow once
 2. If repeated:
-   - Check Databricks cluster event logs
+   - Check Databricks job run details and task event logs
+   - Confirm job definition is serverless-shaped (`environment_key` + `environments`, no cluster bindings)
    - Check workspace status page / known incidents
 3. Reduce concurrency if source is overloaded
 4. Add bounded retry with backoff for known transient steps

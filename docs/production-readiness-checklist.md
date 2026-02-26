@@ -56,7 +56,6 @@ Use this checklist before handing the platform and consuming repositories to the
   - [ ] `DATABRICKS_HOST`
   - [ ] `DATABRICKS_TOKEN` (or OIDC equivalent)
 - [ ] Optional secrets configured when used:
-  - [ ] `DATABRICKS_VALIDATION_CLUSTER_ID`
   - [ ] `DATABRICKS_SQL_WAREHOUSE_ID`
 - [ ] Secret names match workflow expectations exactly
 - [ ] Credential rotation owner and cadence are documented
@@ -70,12 +69,9 @@ Use this checklist before handing the platform and consuming repositories to the
 - [ ] `cd-prod` confirmed to run only on `prod` push
 - [ ] Environment approval gate confirmed on `DataBricks-Prod`
 
-## 7) Databricks compute mapping
+## 7) Databricks compute mapping (serverless)
 
-- [ ] Validation cluster IDs are confirmed for each environment:
-  - [ ] Dev: `0720-012626-pen66ygb`
-  - [ ] Test: `0720-015200-svl8c91v`
-  - [ ] Prod: `0720-160151-np5pb9p5`
+- [ ] Workflow jobs are configured for serverless execution (`environment_key` + `environments`, no `existing_cluster_id` / `new_cluster`).
 - [ ] SQL warehouse IDs are confirmed for each environment (if SQL smoke enabled):
   - [ ] Dev: `0ce33986b0810363`
   - [ ] Test: `df378c87894172b0`
