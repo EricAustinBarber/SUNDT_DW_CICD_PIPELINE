@@ -94,10 +94,31 @@ jobs:
       target: dev
       environment_name: DataBricks-Dev
       run_asset_validation: false
+      # Optional: generic post-deploy bundle jobs
+      run_post_deploy_bundle_jobs: false
     secrets: inherit
 ```
 
 This delegates CI/CD logic to the platform repo.
+
+---
+
+## Optional: Post-deploy bundle jobs
+
+Use `run_post_deploy_bundle_jobs` to run any bundle jobs after deploy. Define jobs in `post_deploy_bundle_jobs_json`.
+
+Example:
+
+```yaml
+      run_post_deploy_bundle_jobs: true
+      post_deploy_bundle_jobs_json: |
+        [
+          {"job_key":"maturity_collect","params":{"env":"dev","run_id":"${{ github.run_id }}"}},
+          {"job_key":"maturity_ci_check","params":{"env":"dev","enforcement_mode":"warn"}}
+        ]
+```
+
+This keeps the CI/CD platform generic while allowing each repo to decide which post-deploy checks to run.
 
 ---
 

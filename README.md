@@ -21,6 +21,7 @@ This repository provides reusable GitHub Actions workflows, deployment controls,
 - Business transformation logic
 - Domain-specific Databricks notebooks from product teams
 - Environment-specific secret values
+- Domain-specific post-deploy checks (these are defined in consuming repos)
 
 ## Branching and promotion model
 - Feature branches -> PR -> `dev`
@@ -51,6 +52,7 @@ See `SECURITY.md` for vulnerability reporting and support policy.
   - `cd-prod` branch guard (must run from `prod`)
   - SQL smoke timeout failure handling
   - Secret masking for optional IDs
+  - Optional post-deploy bundle jobs via `post_deploy_bundle_jobs_json`
 
 ## Current status
 
