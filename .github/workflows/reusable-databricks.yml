@@ -109,7 +109,7 @@ on:
         description: |
           "JSON array of job specs to run after deploy. Example:
           [
-            {\"job_key\":\"maturity_collect\",\"params\":{\"env\":\"dev\",\"run_id\":\"${{ github.run_id }}\"}},
+            {\"job_key\":\"maturity_collect\",\"params\":{\"env\":\"dev\",\"run_id\":\"12345\"}},
             {\"job_key\":\"maturity_ci_check\",\"params\":{\"env\":\"dev\",\"enforcement_mode\":\"warn\"}}
           ]
           Each item supports: job_key (string, required), params (object, optional), vars (object, optional)."
@@ -160,7 +160,6 @@ jobs:
       SQL_WAREHOUSE_ID_SECRET_INPUT: ${{ inputs.sql_warehouse_id_secret }}
       SMOKE_JOB_KEY_INPUT: ${{ inputs.smoke_job_key }}
       SMOKE_NOTEBOOK_PATH_INPUT: ${{ inputs.smoke_notebook_path }}
-      BUNDLE_NAME_INPUT: ${{ inputs.bundle_name }}
 
     steps:
       - name: Checkout
