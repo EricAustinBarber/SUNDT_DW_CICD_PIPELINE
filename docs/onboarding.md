@@ -61,7 +61,6 @@ For each environment:
 - `DATABRICKS_TOKEN` (or OIDC config)
 
 **Optional**
-- `DATABRICKS_VALIDATION_CLUSTER_ID` (required if `run_asset_validation=true` or notebook smoke is enabled)
 - `DATABRICKS_SQL_WAREHOUSE_ID` (required if `run_sql_smoke=true`)
 - Feature flags and deployment toggles
 
@@ -93,7 +92,6 @@ jobs:
       bundle_path: databricks
       target: dev
       environment_name: DataBricks-Dev
-      run_asset_validation: false
       # Optional: generic post-deploy bundle jobs
       run_post_deploy_bundle_jobs: false
     secrets: inherit

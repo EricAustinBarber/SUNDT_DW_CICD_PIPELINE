@@ -22,6 +22,7 @@ This repository provides reusable GitHub Actions workflows, deployment controls,
 - Domain-specific Databricks notebooks from product teams
 - Environment-specific secret values
 - Domain-specific post-deploy checks (these are defined in consuming repos)
+- Cluster-based validation or smoke steps (serverless-only pipeline)
 
 ## Branching and promotion model
 - Feature branches -> PR -> `dev`

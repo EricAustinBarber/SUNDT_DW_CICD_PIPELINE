@@ -25,22 +25,6 @@ on:
         default: "dw_bundle_artifact"
         type: string
 
-      run_asset_validation:
-        description: "Run metadata-driven asset validation job after deploy (ci-test recommended)"
-        required: false
-        default: true
-        type: boolean
-      asset_validation_notebook_path:
-        description: "Databricks notebook path for asset validation driver"
-        required: false
-        default: "/Repos/ci/asset_validation_driver"
-        type: string
-      asset_validation_cluster_id_secret:
-        description: "Name of the GitHub secret containing the cluster id used for validations"
-        required: false
-        default: "DATABRICKS_VALIDATION_CLUSTER_ID"
-        type: string
-
       promote_artifact_only:
         description: "If true, skip build and only deploy a previously-built artifact (cd-prod use-case)"
         required: false
@@ -65,14 +49,9 @@ on:
         default: false
         type: boolean
       smoke_mode:
-        description: "How to run job/notebook smoke tests: notebook | bundle-run"
+        description: "How to run job smoke tests: bundle-run"
         required: false
-        default: "notebook"
-        type: string
-      smoke_notebook_path:
-        description: "Notebook path used for smoke (when smoke_mode=notebook)"
-        required: false
-        default: ""
+        default: "bundle-run"
         type: string
       smoke_job_key:
         description: "Job key to run via databricks bundle run (when smoke_mode=bundle-run)"
@@ -127,8 +106,6 @@ on:
         required: true
       DATABRICKS_TOKEN:
         required: true
-      DATABRICKS_VALIDATION_CLUSTER_ID:
-        required: false
       DATABRICKS_SQL_WAREHOUSE_ID:
         required: false
 
@@ -153,13 +130,10 @@ jobs:
       ENVIRONMENT_NAME_INPUT: ${{ inputs.environment_name }}
       POST_DEPLOY_SUMMARY_OUTPUT: ${{ inputs.post_deploy_summary_output }}
       SMOKE_MODE_INPUT: ${{ inputs.smoke_mode }}
-      RUN_ASSET_VALIDATION_INPUT: ${{ inputs.run_asset_validation }}
       RUN_POST_DEPLOY_SMOKE_INPUT: ${{ inputs.run_post_deploy_smoke }}
       RUN_SQL_SMOKE_INPUT: ${{ inputs.run_sql_smoke }}
-      ASSET_VALIDATION_CLUSTER_ID_SECRET_INPUT: ${{ inputs.asset_validation_cluster_id_secret }}
       SQL_WAREHOUSE_ID_SECRET_INPUT: ${{ inputs.sql_warehouse_id_secret }}
       SMOKE_JOB_KEY_INPUT: ${{ inputs.smoke_job_key }}
-      SMOKE_NOTEBOOK_PATH_INPUT: ${{ inputs.smoke_notebook_path }}
 
     steps:
       - name: Checkout
@@ -186,15 +160,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          validation_cluster_id="${{ secrets[inputs.asset_validation_cluster_id_secret] }}"
           sql_warehouse_id="${{ secrets[inputs.sql_warehouse_id_secret] }}"
-          if [ -n "$validation_cluster_id" ]; then
-            echo "::add-mask::$validation_cluster_id"
-          fi
           if [ -n "$sql_warehouse_id" ]; then
             echo "::add-mask::$sql_warehouse_id"
           fi
-          echo "VALIDATION_CLUSTER_ID=$validation_cluster_id" >> "$GITHUB_ENV"
           echo "SQL_WAREHOUSE_ID=$sql_warehouse_id" >> "$GITHUB_ENV"
 
       - name: Validate inputs
@@ -221,19 +190,9 @@ jobs:
           esac
 
           case "$SMOKE_MODE_INPUT" in
-            notebook|bundle-run) ;;
-            *) echo "Invalid smoke_mode: $SMOKE_MODE_INPUT (expected notebook|bundle-run)"; exit 2;;
+            bundle-run) ;;
+            *) echo "Invalid smoke_mode: $SMOKE_MODE_INPUT (expected bundle-run)"; exit 2;;
           esac
-
-          if [ "$RUN_ASSET_VALIDATION_INPUT" = "true" ] && [ -z "${VALIDATION_CLUSTER_ID:-}" ]; then
-            echo "run_asset_validation=true requires a cluster id secret: $ASSET_VALIDATION_CLUSTER_ID_SECRET_INPUT"
-            exit 2
-          fi
-
-          if [ "$RUN_POST_DEPLOY_SMOKE_INPUT" = "true" ] && [ "$SMOKE_MODE_INPUT" = "notebook" ] && [ -z "${VALIDATION_CLUSTER_ID:-}" ]; then
-            echo "smoke_mode=notebook requires a cluster id secret: $ASSET_VALIDATION_CLUSTER_ID_SECRET_INPUT"
-            exit 2
-          fi
 
           if [ "$RUN_SQL_SMOKE_INPUT" = "true" ] && [ -z "${SQL_WAREHOUSE_ID:-}" ]; then
             echo "run_sql_smoke=true requires a warehouse id secret: $SQL_WAREHOUSE_ID_SECRET_INPUT"
@@ -255,11 +214,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "$BUNDLE_PATH"
-          extra_args=()
-          if [ -n "${VALIDATION_CLUSTER_ID:-}" ]; then
-            extra_args+=(--var "validation_cluster_id=$VALIDATION_CLUSTER_ID")
-          fi
-          databricks bundle validate --target "$TARGET" "${extra_args[@]}"
+          databricks bundle validate --target "$TARGET"
 
       - name: Package bundle content (artifact)
         if: ${{ inputs.promote_artifact_only == false }}
@@ -282,11 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           cd "$BUNDLE_PATH"
-          extra_args=()
-          if [ -n "${VALIDATION_CLUSTER_ID:-}" ]; then
-            extra_args+=(--var "validation_cluster_id=$VALIDATION_CLUSTER_ID")
-          fi
-          databricks bundle deploy --target "$TARGET" --auto-approve "${extra_args[@]}"
+          databricks bundle deploy --target "$TARGET" --auto-approve
 
       - name: Post-deploy bundle summary
         if: ${{ inputs.run_post_deployment_tests }}
@@ -317,62 +268,7 @@ jobs:
             exit 2
           fi
           cd "$BUNDLE_PATH"
-          extra_args=()
-          if [ -n "${VALIDATION_CLUSTER_ID:-}" ]; then
-            extra_args+=(--var "validation_cluster_id=$VALIDATION_CLUSTER_ID")
-          fi
-          databricks bundle run "$SMOKE_JOB_KEY_INPUT" --target "$TARGET" "${extra_args[@]}"
-
-      - name: Post-deploy smoke (notebook submit)
-        if: ${{ inputs.run_post_deploy_smoke && inputs.smoke_mode == 'notebook' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "$SMOKE_NOTEBOOK_PATH_INPUT" ]; then
-            echo "smoke_mode=notebook requires smoke_notebook_path"
-            exit 2
-          fi
-          run_output="$(databricks jobs submit --json "$(jq -n \
-            --arg cid "$VALIDATION_CLUSTER_ID" \
-            --arg path "$SMOKE_NOTEBOOK_PATH_INPUT" \
-            '{
-              run_name: "github-smoke-${{ inputs.target }}-${{ github.run_id }}",
-              tasks: [
-                {
-                  task_key: "smoke_notebook",
-                  existing_cluster_id: $cid,
-                  notebook_task: { notebook_path: $path }
-                }
-              ]
-            }'
-          )")"
-          run_id="$(echo "$run_output" | jq -r '.run_id')"
-          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-            echo "Failed to create smoke test run."
-            echo "$run_output"
-            exit 1
-          fi
-          echo "Submitted smoke run_id=$run_id"
-          for attempt in $(seq 1 60); do
-            state_json="$(databricks jobs get-run "$run_id")"
-            life_cycle_state="$(echo "$state_json" | jq -r '.state.life_cycle_state')"
-            result_state="$(echo "$state_json" | jq -r '.state.result_state // empty')"
-            echo "Smoke run state (attempt $attempt): $life_cycle_state result: ${result_state:-n/a}"
-            if [ "$life_cycle_state" = "TERMINATED" ]; then
-              if [ "$result_state" = "SUCCESS" ]; then
-                exit 0
-              fi
-              echo "$state_json"
-              exit 1
-            fi
-            if [ "$life_cycle_state" = "INTERNAL_ERROR" ] || [ "$life_cycle_state" = "SKIPPED" ]; then
-              echo "$state_json"
-              exit 1
-            fi
-            sleep 10
-          done
-          echo "Smoke run timed out"
-          exit 1
+          databricks bundle run "$SMOKE_JOB_KEY_INPUT" --target "$TARGET"
 
       - name: SQL smoke checks
         if: ${{ inputs.run_sql_smoke }}
@@ -490,10 +386,6 @@ jobs:
             echo "No post-deploy bundle jobs to run."
             exit 0
           fi
-          extra_args=()
-          if [ -n "${VALIDATION_CLUSTER_ID:-}" ]; then
-            extra_args+=(--var "validation_cluster_id=$VALIDATION_CLUSTER_ID")
-          fi
           echo "$jobs_json" | jq -c '.[]' | while read -r job; do
             job_key="$(echo "$job" | jq -r '.job_key')"
             if [ -z "$job_key" ] || [ "$job_key" = "null" ]; then
@@ -510,7 +402,6 @@ jobs:
             done < <(echo "$job" | jq -r '.vars // {} | to_entries[] | [.key, (.value|tostring)] | @tsv')
             databricks bundle run "$job_key" \
               --target "$TARGET" \
-              "${extra_args[@]}" \
               "${vars_args[@]}" \
               "${params_args[@]}"
           done
